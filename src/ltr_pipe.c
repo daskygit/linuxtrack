@@ -1235,7 +1235,7 @@ static void run_loop(void)
 
 	while (!Terminate) {
 
-		ltr_int_usleep(10000);
+		ltr_int_usleep(1000);
 
 		if (suspended())
 			continue;

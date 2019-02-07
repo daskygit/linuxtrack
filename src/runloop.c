@@ -19,6 +19,7 @@ int ltr_int_rl_run(struct camera_control_block *ccb, frame_callback_fun cbk)
   int retval;
   enum ltr_request_t my_request;
   bool stop_flag = false;
+  struct timespec tp;
   unsigned int counter = 0;
   ltr_int_cal_set_state(INITIALIZING);
   if(ltr_int_tracker_init(ccb) != 0){
@@ -62,6 +63,8 @@ int ltr_int_rl_run(struct camera_control_block *ccb, frame_callback_fun cbk)
               stop_flag = true;
             }else{
               if(frame_acquired){
+                clock_gettime(CLOCK_MONOTONIC_RAW, &tp);
+                frame.usec = tp.tv_sec * 1000000 + tp.tv_nsec / 1000;
                 frame.counter = ++counter;
                 if((retval = cbk(ccb, &frame)) < 0){
                   ltr_int_log_message("Error processing frame! (rv = %d)\n", retval);

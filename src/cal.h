@@ -4,6 +4,7 @@
 #ifndef NEW_CAL__H
 #define NEW_CAL__H
 #include <stdbool.h>
+#include <time.h>
 #include "linuxtrack.h"
 #include "ltlib_int.h"
 
@@ -20,7 +21,7 @@ struct blob_type {
    * (+resx/2,+resy/2) = top right corner
    * (-resx/2,-resy/2) = bottom left corner
    */
-  float x,y;
+  double x, y;
   /* total # pixels area, used for sorting/scoring blobs */
   unsigned int score;
 };
@@ -40,6 +41,7 @@ struct frame_type {
   unsigned int width;
   unsigned int height;
   unsigned int counter;
+	unsigned int usec; /* save a precise timestamp at frame capture time for later pose extrapolation */
   unsigned char *bitmap; /* 8bits per pixel, monochrome 0x00 or 0xff */
 };
 

@@ -125,6 +125,8 @@ static bool ltr_int_try_start_master(int *l_master_uplink)
 
 static bool ltr_int_process_message(int l_master_uplink)
 {
+  // static variables for saving and restoring the previous pose
+  static float prev_yaw = 0.0, prev_pitch = 0.0, prev_roll = 0.0, prev_tx = 0.0, prev_ty = 0.0, prev_tz = 0.0;
   message_t msg;
   struct ltr_comm *com;
   linuxtrack_pose_t unfiltered;
@@ -143,10 +145,27 @@ static bool ltr_int_process_message(int l_master_uplink)
     case CMD_POSE:
       //printf("Have new pose!\n");
       //printf(">>>>%f %f %f\n", msg.pose.raw_yaw, msg.pose.raw_pitch, msg.pose.raw_tz);
+
+      //copy old filtered pose values from static vars to msg
+      msg.pose.pose.prev_yaw = prev_yaw;
+      msg.pose.pose.prev_pitch = prev_pitch;
+      msg.pose.pose.prev_roll = prev_roll;
+      msg.pose.pose.prev_tx = prev_tx;
+      msg.pose.pose.prev_ty = prev_ty;
+      msg.pose.pose.prev_tz = prev_tz;
+
       ltr_int_postprocess_axes(axes, &(msg.pose.pose), &unfiltered);
       //printf(">>>>%f %f %f\n", msg.pose.yaw, msg.pose.pitch, msg.pose.tz);
       //printf("Raw center: %f  %f  %f\n", msg.pose.pose.raw_tx, msg.pose.pose.raw_ty, msg.pose.pose.raw_tz);
       //printf("Raw angles: %f  %f  %f\n", msg.pose.pose.raw_pitch, msg.pose.pose.raw_yaw, msg.pose.pose.raw_roll);
+
+      //save current filtered pose for next update in static var
+      prev_yaw = msg.pose.pose.yaw;
+      prev_pitch = msg.pose.pose.pitch;
+      prev_roll = msg.pose.pose.roll;
+      prev_tx = msg.pose.pose.tx;
+      prev_ty = msg.pose.pose.ty;
+      prev_tz = msg.pose.pose.tz;
 
       com = mmm.data;
       ltr_int_lockSemaphore(mmm.sem);

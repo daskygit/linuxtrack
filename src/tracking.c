@@ -410,6 +410,12 @@ int ltr_int_update_pose(struct frame_type *frame)
   pthread_mutex_lock(&pose_mutex);
   current_pose.pose.resolution_x = frame->width;
   current_pose.pose.resolution_y = frame->height;
+
+  //save previous pose timestamp for later pose extrapolation
+  current_pose.pose.prev_usec = current_pose.pose.usec;
+  //update current pose timestamp with capture time
+  current_pose.pose.usec = frame->usec;
+	
   for(i = 0; i < MAX_BLOBS * BLOB_ELEMENTS; ++i){
     current_pose.blob_list[i] = 0.0;
   }

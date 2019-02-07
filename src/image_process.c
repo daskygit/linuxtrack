@@ -7,7 +7,7 @@
 
 
 typedef struct preblob_t{
-  float sum_x, sum_y; //sums of pixval and coord products
+  uint32_t sum_x, sum_y; //sums of pixval and coord products
   int sum; //sum of pixel weights 
   int points; //pixel count
   bool added;
@@ -195,8 +195,8 @@ static void add_stripe_to_preblob(preblob_t *pb, stripe_t *stripe)
 #ifdef DBG_MSG
   printf("Adding stripe to blob %p\n",pb);
 #endif
-  pb->sum_x += ((float)stripe->sum * stripe->hstart) + stripe->sum_x;
-  pb->sum_y += (float)stripe->sum * stripe->vline;
+  pb->sum_x += (stripe->sum * stripe->hstart) + stripe->sum_x;
+  pb->sum_y += stripe->sum * stripe->vline;
   pb->sum += stripe->sum;
   pb->points += stripe->points;
 }
@@ -204,8 +204,8 @@ static void add_stripe_to_preblob(preblob_t *pb, stripe_t *stripe)
 static preblob_t* preblob_from_stripe(stripe_t *stripe)
 {
   preblob_t *pb = (preblob_t*)ltr_int_my_malloc(sizeof(preblob_t));
-  pb->sum_x = ((float)stripe->sum * stripe->hstart) + stripe->sum_x;
-  pb->sum_y = (float)stripe->sum * stripe->vline;
+  pb->sum_x = (stripe->sum * stripe->hstart) + stripe->sum_x;
+  pb->sum_y = stripe->sum * stripe->vline;
   pb->sum = stripe->sum;
   pb->points = stripe->points;
   pb->added = false;
@@ -483,8 +483,8 @@ int ltr_int_stripes_to_blobs(unsigned int num_blobs, struct bloblist_type *blt,
     ++valid;
     if(counter < num_blobs){
       //printf("sum_x %g   sum_y %g   sum %d\n", pb->sum_x, pb->sum_y, pb->sum);
-      float x = pb->sum_x / pb->sum;
-      float y = pb->sum_y / pb->sum;
+      double x = (double)pb->sum_x / (double)pb->sum;
+      double y = (double)pb->sum_y / (double)pb->sum;
       //printf("%f\t\t%f\t\t%d\n", x, y, pb->points);
       cal_b = &(blt->blobs[counter]);
       cal_b->x = (((img->w - 1) / 2.0) - (x / img->ratio));
