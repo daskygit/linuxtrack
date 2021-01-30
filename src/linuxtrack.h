@@ -73,6 +73,14 @@ typedef struct{
   float ty;
   float tz;
   uint32_t counter;
+  uint32_t usec;
+  float prev_pitch;
+  float prev_yaw;
+  float prev_roll;
+  float prev_tx;
+  float prev_ty;
+  float prev_tz;
+  uint32_t prev_usec;
   uint32_t resolution_x;
   uint32_t resolution_y;
   float raw_pitch;

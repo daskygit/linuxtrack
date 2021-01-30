@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
-
+#include <time.h>
 #include "ltlib_int.h"
 #include "ipc_utils.h"
 #include "utils.h"
@@ -159,27 +159,63 @@ int ltr_get_pose(float *heading,
   struct ltr_comm *com = mmm.data;
   if((!initialized) || (com == NULL)) return 0;
   struct ltr_comm tmp;
+  //local variables for pose extrapolation 
+  uint32_t prev_usec, curr_usec, now_usec, delay_usec, capt_period;
+  struct timespec tp;
+  linuxtrack_pose_t* p;
+	
   ltr_int_lockSemaphore(mmm.sem);
   tmp = *com;
   //printf("OTHER_SIDE: %g %g %g\n", tmp.pose.yaw, tmp.pose.pitch, tmp.pose.roll);
   ltr_int_unlockSemaphore(mmm.sem);
+
   if(tmp.state >= LINUXTRACK_OK){
-    uint32_t passed_counter = *counter;
-    linuxtrack_pose_t tmp_pose;
-    ltr_int_extrapolate_pose(&(tmp.full_pose), &tmp_pose);
-    *heading = tmp_pose.yaw;
-    *pitch = tmp_pose.pitch;
-    *roll = tmp_pose.roll;
-    *tx = tmp_pose.tx;
-    *ty = tmp_pose.ty;
-    *tz = tmp_pose.tz;
-    *counter = tmp.full_pose.pose.counter;
-    if(passed_counter != *counter){
-      return 1;// flag new data
-    }else{
-      return 0;
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &tp);
+    now_usec = tp.tv_sec * 1000000 + tp.tv_nsec / 1000;
+    
+    p = &tmp.full_pose.pose;
+    
+    curr_usec = p->usec;
+    prev_usec = p->prev_usec;
+  
+    // check for timestamp overflow
+    if (now_usec < curr_usec) {
+      delay_usec = now_usec + 1 + ((uint32_t)~0 - curr_usec);
+    } else {
+      delay_usec = now_usec - curr_usec;
     }
-  }else{
+    if (curr_usec < prev_usec) {
+      capt_period = curr_usec + 1 + ((uint32_t)~0 - prev_usec);
+    } else {
+      capt_period = curr_usec - prev_usec;    
+    }
+    // calculate the extrapolation, based on delay/period ratio
+    float ext_pol = (float)delay_usec / (float)capt_period;
+//    printf("capt_period: %5u delay_usec: %4u ext_pol: %4.1f%%\n", capt_period, delay_usec, ext_pol * 100.0);
+//    printf("ext yaw: %6.2f\n\n", (p->yaw - p->prev_yaw) * ext_pol);
+
+		if (ext_pol <= 10.0) {
+			// calculate and write the extrapolated values
+			*heading = p->yaw   + (p->yaw   - p->prev_yaw)   * ext_pol;
+			*pitch   = p->pitch + (p->pitch - p->prev_pitch) * ext_pol;
+			*roll    = p->roll  + (p->roll  - p->prev_roll)  * ext_pol;
+			*tx      = p->tx    + (p->tx    - p->prev_tx)    * ext_pol;
+			*ty      = p->ty    + (p->ty    - p->prev_ty)    * ext_pol;
+			*tz      = p->tz    + (p->tz    - p->prev_tz)    * ext_pol;
+		} else {
+			//should never happen but ... to avoid strange overshoot, just use the most uptodate filtered pose
+      *heading = p->yaw;
+      *pitch   = p->pitch;
+      *roll    = p->roll;
+      *tx      = p->tx;
+      *ty      = p->ty;
+      *tz      = p->tz;
+		}
+		*counter = p->counter;
+		return 1;// flag new data
+
+  } else {
     *heading = 0.0;
     *pitch = 0.0;
     *roll = 0.0;

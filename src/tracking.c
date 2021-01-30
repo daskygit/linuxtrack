@@ -39,13 +39,13 @@ static void expfilt_vec(float x[3],
 bool ltr_int_check_pose()
 {
   struct reflector_model_type rm;
-  if(ltr_int_model_changed(true)){
-    if(!ltr_int_get_model_setup(&rm)){
+  if(ltr_int_model_changed(true)) {
+    if(!ltr_int_get_model_setup(&rm)) {
       ltr_int_log_message("Can't get pose setup!\n");
       return false;
     }
     ltr_int_log_message("Initializing model!\n");
-    if(!ltr_int_pose_init(rm)){
+    if(!ltr_int_pose_init(rm)) {
       ltr_int_log_message("Can't initialize pose!\n");
       return false;
     }
@@ -61,19 +61,19 @@ static bool behind = false;
 
 bool ltr_int_init_tracking()
 {
-  if(tracking_dbg_flag == DBG_CHECK){
+  if(tracking_dbg_flag == DBG_CHECK) {
     tracking_dbg_flag = ltr_int_get_dbg_flag('t');
     raw_dbg_flag = ltr_int_get_dbg_flag('r');
   }
 
   orientation = ltr_int_get_orientation();
-  if(orientation & ORIENT_FROM_BEHIND){
+  if(orientation & ORIENT_FROM_BEHIND) {
     behind = true;
-  }else{
+  } else {
     behind = false;
   }
 
-  if(ltr_int_check_pose() == false){
+  if(ltr_int_check_pose() == false) {
     ltr_int_log_message("Can't get pose setup!\n");
     return false;
   }
@@ -96,14 +96,14 @@ int ltr_int_recenter_tracking()
 
 static pthread_mutex_t pose_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void ltr_int_rotate_camera(float *x, float *y, int cam_orientation)
+static void ltr_int_rotate_camera(double *x, double *y, int cam_orientation)
 {
-  float tmp_x;
-  float tmp_y;
-  if(cam_orientation & ORIENT_XCHG_XY){
+  double tmp_x;
+  double tmp_y;
+  if(cam_orientation & ORIENT_XCHG_XY) {
     tmp_x = *y;
     tmp_y = *x;
-  }else{
+  } else {
     tmp_x = *x;
     tmp_y = *y;
   }
@@ -115,7 +115,7 @@ static void ltr_int_rotate_camera(float *x, float *y, int cam_orientation)
 static void ltr_int_remove_camera_rotation(struct bloblist_type bl)
 {
   unsigned int i;
-  for(i = 0; i < bl.num_blobs; ++i){
+  for(i = 0; i < bl.num_blobs; ++i) {
     ltr_int_rotate_camera(&(bl.blobs[i].x), &(bl.blobs[i].y), orientation);
   }
 }
@@ -127,26 +127,26 @@ static int update_pose_1pt(struct frame_type *frame)
   static float c_z = 0.0f;
 
   //printf("Updating pose 1pt...\n");
-  if(!ltr_int_check_pose()){
+  if(!ltr_int_check_pose()) {
     return -1;
   }
 
   //printf("Updating pose...\n");
-  if(tracking_dbg_flag == DBG_ON){
+  if(tracking_dbg_flag == DBG_ON) {
     unsigned int i;
-    for(i = 0; i < frame->bloblist.num_blobs; ++i){
+    for(i = 0; i < frame->bloblist.num_blobs; ++i) {
       ltr_int_log_message("*DBG_t* %d: %g %g %d\n", i, frame->bloblist.blobs[i].x, frame->bloblist.blobs[i].y,
                           frame->bloblist.blobs[i].score);
     }
   }
 
   if((frame->bloblist.num_blobs > 0) && ltr_int_is_finite(frame->bloblist.blobs[0].x)
-     && ltr_int_is_finite(frame->bloblist.blobs[0].y)){
-  }else{
+     && ltr_int_is_finite(frame->bloblist.blobs[0].y)) {
+  } else {
     return -1;
   }
 
-  if(recenter){
+  if(recenter) {
     c_x = frame->bloblist.blobs[0].x;
     c_y = frame->bloblist.blobs[0].y;
     c_z = cam_distance * sqrtf((float)frame->bloblist.blobs[0].score);
@@ -163,13 +163,13 @@ static int update_pose_1pt(struct frame_type *frame)
   tmp_angles[2] = 0.0f;
   tmp_translations[0] = 0.0f;
   tmp_translations[1] = 0.0f;
-  if(ltr_int_is_face() && (frame->bloblist.blobs[0].score > 0)){
-      tmp_translations[2] = c_z / sqrtf((float)frame->bloblist.blobs[0].score) - cam_distance;
-  }else{
+  if(ltr_int_is_face() && (frame->bloblist.blobs[0].score > 0)) {
+    tmp_translations[2] = c_z / sqrtf((float)frame->bloblist.blobs[0].score) - cam_distance;
+  } else {
     tmp_translations[2] = 0.0f;
   }
 
-  if(behind){
+  if(behind) {
     tmp_angles[0] *= -1;
     //prudent, but not really needed as it is presend only in facetracking and
     //  face can't be tracked from behind ;) Well, normaly it can't ;)
@@ -208,20 +208,20 @@ static int update_absolute_pose(struct frame_type *frame)
   static float c_tz = 0.0f;
 
   //printf("Updating pose 1pt...\n");
-  if(!ltr_int_check_pose()){
+  if(!ltr_int_check_pose()) {
     return -1;
   }
 
   //printf("Updating pose...\n");
-  if(tracking_dbg_flag == DBG_ON){
+  if(tracking_dbg_flag == DBG_ON) {
     unsigned int i;
-    for(i = 0; i < frame->bloblist.num_blobs; ++i){
+    for(i = 0; i < frame->bloblist.num_blobs; ++i) {
       ltr_int_log_message("*DBG_t* %d: %g %g %d\n", i, frame->bloblist.blobs[i].x, frame->bloblist.blobs[i].y,
                           frame->bloblist.blobs[i].score);
     }
   }
 
-  if(recenter){
+  if(recenter) {
     c_pitch = frame->bloblist.blobs[0].y;
     c_yaw = frame->bloblist.blobs[0].x;
     c_roll = frame->bloblist.blobs[1].x;
@@ -265,30 +265,30 @@ static float two_d_size(struct blob_type b1, struct blob_type b2)
 
 static int update_pose_3pt(struct frame_type *frame)
 {
-  if(frame->bloblist.num_blobs < 3){
+  if(frame->bloblist.num_blobs < 3) {
     return -1;
   }
   if(ltr_int_is_finite(frame->bloblist.blobs[0].x) && ltr_int_is_finite(frame->bloblist.blobs[0].y) &&
-      ltr_int_is_finite(frame->bloblist.blobs[1].x) && ltr_int_is_finite(frame->bloblist.blobs[1].y) &&
-      ltr_int_is_finite(frame->bloblist.blobs[2].x) && ltr_int_is_finite(frame->bloblist.blobs[2].y)){
-  }else{
+     ltr_int_is_finite(frame->bloblist.blobs[1].x) && ltr_int_is_finite(frame->bloblist.blobs[1].y) &&
+     ltr_int_is_finite(frame->bloblist.blobs[2].x) && ltr_int_is_finite(frame->bloblist.blobs[2].y)) {
+  } else {
     return -1;
   }
-  if(tracking_dbg_flag == DBG_ON){
+  if(tracking_dbg_flag == DBG_ON) {
     unsigned int i;
-    for(i = 0; i < frame->bloblist.num_blobs; ++i){
+    for(i = 0; i < frame->bloblist.num_blobs; ++i) {
       ltr_int_log_message("*DBG_t* %d: %g %g %d\n", i, frame->bloblist.blobs[i].x, frame->bloblist.blobs[i].y,
                           frame->bloblist.blobs[i].score);
     }
     ltr_int_log_message("*DBG_t* d1 = %g   d2 = %g   d3 = %g\n",
-      two_d_size(frame->bloblist.blobs[0], frame->bloblist.blobs[1]),
-      two_d_size(frame->bloblist.blobs[0], frame->bloblist.blobs[2]),
-      two_d_size(frame->bloblist.blobs[1], frame->bloblist.blobs[2]));
+                        two_d_size(frame->bloblist.blobs[0], frame->bloblist.blobs[1]),
+                        two_d_size(frame->bloblist.blobs[0], frame->bloblist.blobs[2]),
+                        two_d_size(frame->bloblist.blobs[1], frame->bloblist.blobs[2]));
   }
 
   linuxtrack_pose_t t;
   linuxtrack_abs_pose_t abs_pose;
-  if(!ltr_int_pose_process_blobs(frame->bloblist, &t, &abs_pose, recenter)){
+  if(!ltr_int_pose_process_blobs(frame->bloblist, &t, &abs_pose, recenter)) {
     return -1;
   }
   recenter = false;
@@ -302,11 +302,11 @@ static int update_pose_3pt(struct frame_type *frame)
   tmp_translations[1] = t.raw_ty;
   tmp_translations[2] = t.raw_tz;
 
-  if(!ltr_int_is_vector_finite(tmp_angles) || !ltr_int_is_vector_finite(tmp_translations)){
+  if(!ltr_int_is_vector_finite(tmp_angles) || !ltr_int_is_vector_finite(tmp_translations)) {
     return -1;
   }
 
-  if(behind){
+  if(behind) {
     tmp_angles[0] *= -1;
     tmp_angles[2] *= -1;
     tmp_translations[0] *= -1;
@@ -330,7 +330,7 @@ static int update_pose_3pt(struct frame_type *frame)
   current_pose.prev_timestamp = current_pose.timestamp;
   current_pose.timestamp = frame->usec;
   pthread_mutex_unlock(&pose_mutex);
-  if(raw_dbg_flag == DBG_ON){
+  if(raw_dbg_flag == DBG_ON) {
     printf("*DBG_r* yaw: %g pitch: %g roll: %g\n", tmp_angles[0], tmp_angles[1], tmp_angles[2]);
     ltr_int_log_message("*DBG_r* x: %g y: %g z: %g\n",
                         tmp_translations[0], tmp_translations[1], tmp_translations[2]);
@@ -341,6 +341,9 @@ static int update_pose_3pt(struct frame_type *frame)
 
 bool ltr_int_postprocess_axes(ltr_axes_t axes, linuxtrack_pose_t *pose, linuxtrack_pose_t *unfiltered)
 {
+// static variables for saving and restoring the previous pose
+  static float prev_yaw = 0.0, prev_pitch = 0.0, prev_roll = 0.0, prev_tx = 0.0, prev_ty = 0.0, prev_tz = 0.0;
+
 //  printf(">>Pre: %f %f %f  %f %f %f\n", pose->raw_pitch, pose->raw_yaw, pose->raw_roll,
 //         pose->raw_tx, pose->raw_ty, pose->raw_tz);
 //  static float filterfactor=1.0;
@@ -357,14 +360,13 @@ bool ltr_int_postprocess_axes(ltr_axes_t axes, linuxtrack_pose_t *pose, linuxtra
   raw_angles[2] = unfiltered->roll = ltr_int_val_on_axis(axes, ROLL, pose->raw_roll);
   //printf(">>Raw: %f %f %f\n", raw_angles[0], raw_angles[1], raw_angles[2]);
 
-  if(!ltr_int_is_vector_finite(raw_angles)){
+  if(!ltr_int_is_vector_finite(raw_angles)) {
     return false;
   }
 
   pose->pitch = clamp_angle(ltr_int_filter_axis(axes, PITCH, raw_angles[0], &(filtered_angles[0])));
   pose->yaw = clamp_angle(ltr_int_filter_axis(axes, YAW, raw_angles[1], &(filtered_angles[1])));
   pose->roll = clamp_angle(ltr_int_filter_axis(axes, ROLL, raw_angles[2], &(filtered_angles[2])));
-
   double rotated[3];
   double transform[3][3];
 
@@ -372,12 +374,12 @@ bool ltr_int_postprocess_axes(ltr_axes_t axes, linuxtrack_pose_t *pose, linuxtra
   displacement[0] = ltr_int_val_on_axis(axes, TX, pose->raw_tx);
   displacement[1] = ltr_int_val_on_axis(axes, TY, pose->raw_ty);
   displacement[2] = ltr_int_val_on_axis(axes, TZ, pose->raw_tz);
-  if(ltr_int_do_tr_align()){
+  if(ltr_int_do_tr_align()) {
     //printf("Translations: Aligned\n");
     ltr_int_euler_to_matrix(pose->pitch / 180.0 * M_PI, pose->yaw / 180.0 * M_PI,
                             pose->roll / 180.0 * M_PI, transform);
     ltr_int_matrix_times_vec(transform, displacement, rotated);
-    if(!ltr_int_is_vector_finite(rotated)){
+    if(!ltr_int_is_vector_finite(rotated)) {
       return false;
     }
 //  ltr_int_print_matrix(transform, "trf");
@@ -386,7 +388,7 @@ bool ltr_int_postprocess_axes(ltr_axes_t axes, linuxtrack_pose_t *pose, linuxtra
     unfiltered->tx = rotated[0];
     unfiltered->ty = rotated[1];
     unfiltered->tz = rotated[2];
-  }else{
+  } else {
     //printf("Translations: Unaligned\n");
     unfiltered->tx = displacement[0];
     unfiltered->ty = displacement[1];
@@ -400,6 +402,22 @@ bool ltr_int_postprocess_axes(ltr_axes_t axes, linuxtrack_pose_t *pose, linuxtra
   pose->tz =
     ltr_int_filter_axis(axes, TZ, unfiltered->tz, &(filtered_translations[2]));
   //printf(">>Post: %f %f %f  %f %f %f\n", pose->pitch, pose->yaw, pose->roll, pose->tx, pose->ty, pose->tz);
+
+  //copy old filtered pose values from static vars to msg
+  pose->prev_yaw = prev_yaw;
+  pose->prev_pitch = prev_pitch;
+  pose->prev_roll = prev_roll;
+  pose->prev_tx = prev_tx;
+  pose->prev_ty = prev_ty;
+  pose->prev_tz = prev_tz;
+  //save current filtered pose for next update in static var
+  prev_yaw = pose->yaw;
+  prev_pitch = pose->pitch;
+  prev_roll = pose->roll;
+  prev_tx = pose->tx;
+  prev_ty = pose->ty;
+  prev_tz = pose->tz;
+
   return true;
 }
 
@@ -409,7 +427,7 @@ static uint32_t counter_d = 0;
 int ltr_int_update_pose(struct frame_type *frame)
 {
   //printf("Updating pose...\n");
-  if(ltr_int_model_changed(false)){
+  if(ltr_int_model_changed(false)) {
     ltr_int_check_pose();
     recenter = true;
   }
@@ -419,10 +437,16 @@ int ltr_int_update_pose(struct frame_type *frame)
   pthread_mutex_lock(&pose_mutex);
   current_pose.pose.resolution_x = frame->width;
   current_pose.pose.resolution_y = frame->height;
-  for(i = 0; i < MAX_BLOBS * BLOB_ELEMENTS; ++i){
+
+  //save previous pose timestamp for later pose extrapolation
+  current_pose.pose.prev_usec = current_pose.pose.usec;
+  //update current pose timestamp with capture time
+  current_pose.pose.usec = frame->usec;
+
+  for(i = 0; i < MAX_BLOBS * BLOB_ELEMENTS; ++i) {
     current_pose.blob_list[i] = 0.0;
   }
-  for(i = 0; i < frame->bloblist.num_blobs; ++i){
+  for(i = 0; i < frame->bloblist.num_blobs; ++i) {
     current_pose.blob_list[i * BLOB_ELEMENTS] = frame->bloblist.blobs[i].x;
     current_pose.blob_list[i * BLOB_ELEMENTS + 1] = frame->bloblist.blobs[i].y;
     current_pose.blob_list[i * BLOB_ELEMENTS + 2] = frame->bloblist.blobs[i].score;
@@ -431,16 +455,16 @@ int ltr_int_update_pose(struct frame_type *frame)
 
   pthread_mutex_unlock(&pose_mutex);
   bool res = -1;
-  if(ltr_int_is_single_point()){
+  if(ltr_int_is_single_point()) {
     res = update_pose_1pt(frame);
-  }else if(ltr_int_is_absolute()){
+  } else if(ltr_int_is_absolute()) {
     res = update_absolute_pose(frame);
-  }else{
+  } else {
     res = update_pose_3pt(frame);
   }
-  if(res == 0){
+  if(res == 0) {
     ++counter_d;
-    if(init_recenter){
+    if(init_recenter) {
       //discard the first valid frame to allow good recenter on the next one
       init_recenter = false;
       recenter = true;
@@ -453,7 +477,7 @@ int ltr_int_update_pose(struct frame_type *frame)
 
 int ltr_int_tracking_get_pose(linuxtrack_full_pose_t *pose)
 {
-  if(!tracking_initialized){
+  if(!tracking_initialized) {
     ltr_int_init_tracking();
   }
 
@@ -468,10 +492,9 @@ int ltr_int_tracking_get_pose(linuxtrack_full_pose_t *pose)
   pose->timestamp = current_pose.timestamp;
   pose->prev_timestamp = current_pose.prev_timestamp;
   int i;
-  for(i = 0; i < (int)current_pose.blobs * BLOB_ELEMENTS; ++i){
+  for(i = 0; i < (int)current_pose.blobs * BLOB_ELEMENTS; ++i) {
     pose->blob_list[i] = current_pose.blob_list[i];
   }
   pthread_mutex_unlock(&pose_mutex);
   return 0;
 }
-
